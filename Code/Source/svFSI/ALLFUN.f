@@ -64,7 +64,7 @@
       END INTERFACE GLOBAL
 
       INTERFACE LOCAL
-         MODULE PROCEDURE LOCALIS, LOCALRV
+         MODULE PROCEDURE LOCALIS, LOCALRV, LOCALRA
       END INTERFACE LOCAL
 
       INTERFACE DESTROY
@@ -593,6 +593,54 @@
       RETURN
       END FUNCTION LOCALRV
 
+!--------------------------------------------------------------------
+      FUNCTION LOCALRA(U)
+      USE COMMOD
+      IMPLICIT NONE
+      REAL(KIND=8), INTENT(IN) :: U(:,:,:)
+      REAL(KIND=8), ALLOCATABLE :: LOCALRA(:,:,:)
+
+      INTEGER m, s, e, a, Ac, n, j
+      REAL(KIND=8), ALLOCATABLE :: tmpU(:)
+
+      IF (.NOT.ALLOCATED(ltg)) err = "ltg is not set yet"
+      IF (cm%mas()) THEN
+         m = SIZE(U,1)
+         IF (SIZE(U,2) .NE. gtnNo) err = "LOCAL is only"//
+     2      " specified for vector with size gtnNo"
+         n = SIZE(U,3)
+      END IF
+      CALL cm%bcast(m)
+      CALL cm%bcast(n)
+
+      IF (cm%seq()) THEN
+         ALLOCATE(LOCALRA(m,gtnNo,n))
+         LOCALRA = U
+         RETURN
+      END IF
+
+      ALLOCATE(LOCALRA(m,tnNo,n), tmpU(m*gtnNo))
+
+      DO j=1,n
+         IF (cm%mas()) THEN
+            DO a=1, gtnNo
+               s = m*(a-1) + 1
+               e = m*a
+               tmpU(s:e) = U(:,a,j)
+            END DO
+         END IF
+         CALL cm%bcast(tmpU)
+         DO a=1, tnNo
+            Ac = ltg(a)
+            s  = m*(Ac-1) + 1
+            e  = m*Ac
+            LOCALRA(:,a,j) = tmpU(s:e)
+         END DO
+      END DO
+      RETURN
+      END FUNCTION LOCALRA
+
+
 !####################################################################
 !     This function returns the domain that a set of nodes belongs to
       FUNCTION DOMAIN(lM, iEq, e)
@@ -1102,7 +1150,10 @@
       AR = MAXVAL(s)/MINVAL(s)
 
       RETURN
+
+
       END FUNCTION ASPECTRATIO
+
 
 !####################################################################
       

@@ -100,7 +100,7 @@
       INTEGER, PARAMETER :: phys_NA = 200, phys_fluid = 201,
      2   phys_struct = 202, phys_heatS = 203, phys_lElas = 204,
      3   phys_heatF = 205, phys_FSI = 206, phys_elcMag = 207,
-     4   phys_mesh = 208, phys_BBO = 209
+     4   phys_mesh = 208, phys_BBO = 209, phys_RT = 210
 
 !     Saving formats
 !     Don't save, VTK ASCII format, VTK binary format
@@ -577,6 +577,8 @@
       LOGICAL sepOutput
 !     Whether start from beginning or from simulations
       LOGICAL stFileFlag
+!     Whether to use pre-computed vel field for RT simulations
+      LOGICAL velFileFlag
 !     Whether to overwrite restart file or not
       LOGICAL stFileRepl
 !     Use Legacy mesh input format
@@ -633,6 +635,14 @@
       INTEGER tnNo
 !     Restart Time Step
       INTEGER rsTS
+!     First Time Step
+      INTEGER fStep
+!     Last Time Step
+      INTEGER lStep
+!     Increment Time Step
+      INTEGER iStep
+!     Increment Time Step
+      INTEGER ntpoints
 
 !     REAL VARIABLES
 !     Time step size
@@ -643,6 +653,8 @@
 !     CHARACTER VARIABLES
 !     Initialization file path
       CHARACTER(LEN=stdL) iniFilePath
+!     Velocity file path
+      CHARACTER(LEN=stdL) velFilePath
 !     Saved output file name
       CHARACTER(LEN=stdL) saveName
 !     Restart file name
@@ -680,6 +692,10 @@
       REAL(KIND=8), ALLOCATABLE :: Yn(:,:)
 !     Fiber direction (for electrophysiology / structure mechanics)
       REAL(KIND=8), ALLOCATABLE :: fN(:,:)
+!     Velocity field (for RT)
+      REAL(KIND=8), ALLOCATABLE :: allU(:,:,:)
+!     Velocity field (for RT)
+      REAL(KIND=8), ALLOCATABLE :: Un(:,:,:)
 
 !     DERIVED TYPE VARIABLES
 !     Coupled BCs structures used for multidomain simulations

@@ -40,6 +40,7 @@
       USE COMMOD
       USE ALLFUN
 
+
       IMPLICIT NONE
 
       REAL(KIND=8), INTENT(OUT) :: timeP(3)
@@ -72,6 +73,10 @@
             eq(iEq)%dof = nsd + 1
             eq(iEq)%sym = 'NS'
          CASE (phys_heatF)
+            eq(iEq)%dof = 1
+            eq(iEq)%sym = 'HF'
+         CASE (phys_RT)
+            tDof = nsd
             eq(iEq)%dof = 1
             eq(iEq)%sym = 'HF'
          CASE (phys_heatS)
@@ -116,6 +121,8 @@
 
       stamp = (/cm%np(), nEq, nMsh, tnNo, i, tDof, ierr, version/)
 
+
+
 !     Calculating the record length
       i = 2
       IF (dFlag) i = 3
@@ -129,6 +136,9 @@
 
       ALLOCATE(Ao(tDof,tnNo), An(tDof,tnNo), Yo(tDof,tnNo),
      2   Yn(tDof,tnNo), Do(tDof,tnNo), Dn(tDof,tnNo))
+
+
+
 
       IF (.NOT.resetSim) THEN
          IF (.NOT.ALLOCATED(rmsh%flag)) ALLOCATE(rmsh%flag(nMsh))
@@ -259,6 +269,7 @@
          END DO
       END DO
 
+
 !     Predicting new variables
       CALL PICP
 
@@ -276,6 +287,7 @@
       CALL OUTRESULT(timeP, 1, 1)
       rmsh%flag(:) = .FALSE.
       resetSim = .FALSE.
+
 
       RETURN
       CONTAINS

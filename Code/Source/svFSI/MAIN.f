@@ -41,12 +41,14 @@
       USE COMMOD
       USE ALLFUN
 
+
       IMPLICIT NONE
 
       LOGICAL l1, l2, l3, l4, l5
       INTEGER i, a, Ac, e, ierr, iEqOld, iBc, eNoN, iM, j, fid
+      INTEGER n, n1, n2
 c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
-      REAL(KIND=8) timeP(3)
+      REAL(KIND=8) timeP(3), alpha
       CHARACTER(LEN=stdL) fName, tmpS
 
       LOGICAL, ALLOCATABLE :: isS(:)
@@ -76,13 +78,19 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 !     Reading the user-defined parameters from foo.inp
  101  CALL READFILES
 
+
 !     Doing the partitioning and distributing the data to the all
 !     Processors
       CALL DISTRIBUTE
 
+
 !     Initializing the solution vectors and constructing LHS matrix
 !     format
       CALL INITIALIZE(timeP)
+
+!      IF (velFileFlag) THEN
+!         CALL READVELOCITY
+!      END IF 
 
 !     only compute once
       IF (useTrilinosLS .OR. useTrilinosAssemAndLS) THEN
@@ -93,6 +101,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
       END IF
 
       dbg = 'Allocating intermediate variables'
+
       ALLOCATE(Ag(tDof,tnNo), Yg(tDof,tnNo), Dg(tDof,tnNo),
      3   res(nFacesLS), incL(nFacesLS), isS(tnNo))
       isS = .FALSE.
@@ -108,10 +117,12 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
      3         Use FSILS in the input file or set it default."
       ENDIF
 #endif
+
 !--------------------------------------------------------------------
 !     Outer loop for marching in time. When entring this loop, all old
 !     variables are completely set and satisfy BCs.
       IF (cTS .LE. nITS) dt = dt/1D1
+
       DO
 !     Adjusting the time step size once initialization stage is over
          IF (cTS .EQ. nITS) THEN
@@ -136,6 +147,20 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
          CALL PICP
          CALL SETBCDIR(An, Yn, Dn)
 
+         IF (velFileFlag) THEN
+             n = MOD(cTS,ntpoints*iStep)
+
+             n1 = n/iStep + 1
+             n2 = n1 + 1
+
+             i = (lStep - fStep)/iStep + 2
+             IF(n2 .EQ. i) n2 = 1
+
+             alpha = REAL(MOD(n,iStep),8)/REAL(iStep,8)
+             Yn(1:nsd,:) = allU(:,:,n1)*(1D0 - alpha) + 
+     2          allU(:,:,n2)*alpha
+         END IF 
+
 !     Inner loop for iteration
          DO
             iEqOld = cEq
@@ -146,6 +171,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
             END IF
 !     Initiator step
             CALL PICI(Ag, Yg, Dg)
+
 
             dbg = 'Allocating the RHS and LHS'
             IF (ALLOCATED(R)) THEN
@@ -212,6 +238,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
                      xl(:,a) = x (:,Ac)
                      al(:,a) = Ag(:,Ac)
                      yl(:,a) = Yg(:,Ac)
+                     IF (velFileFlag) yl(1:nsd, a)= Yn(1:nsd,Ac)
                      dl(:,a) = Dg(:,Ac)
                      IF (mvMsh) THEN
                         dol(:,a) = Do(i:j,Ac)

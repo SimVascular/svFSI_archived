@@ -77,6 +77,7 @@
          pClr         = .TRUE.
          mvMsh        = .FALSE.
          stFileFlag   = .FALSE.
+         velFileFlag  = .FALSE.
          stFileRepl   = .FALSE.
          saveAve      = .FALSE.
          sepOutput    = .FALSE.
@@ -87,6 +88,7 @@
          roInf        = 2D-1
          stFileName   = "stFile"
          iniFilePath  = ""
+         velFilePath  = ""
          stopTrigName = "STOP_SIM"
          rmsh%isReqd  = .FALSE.
          ichckIEN     = .TRUE.
@@ -129,9 +131,9 @@
          lPtr => list%get(pClr,"Colorful terminal output")
          lPtr => list%get(sepOutput,"Use separator in the history file")
          lPtr => list%get(stFileFlag,"Continue previous simulation",1)
-
          IF (.NOT.stFileFlag) REWIND(std%fId)
-
+         lPtr => list%get(velFileFlag,"Use pre-computed velocity",1)
+         IF (.NOT.velFileFlag) REWIND(std%fId)
          CALL DATE_AND_TIME(DATE=date, VALUES=tArray)
          std = "                                               "
          std = " ----------------------------------------------"
@@ -162,6 +164,17 @@
             lPtr => list%get(fTmp,"Simulation initialization file path")
             IF (ASSOCIATED(lPtr))
      2         iniFilePath = fTmp%fname
+         END IF
+
+         IF (velFileFlag) THEN
+            lPtr => list%get(fTmp,"Velocity results file path")
+            IF (ASSOCIATED(lPtr))
+     2         velFilePath = fTmp%fname
+            lPtr => list%get(fStep,"First time step")
+            lPtr => list%get(lStep,"Last time step")
+            lPtr => list%get(iStep,"Increment time step")
+            ntpoints = (lStep - fStep)/iStep + 1
+            
          END IF
 
          lPtr => list%get(nsd,"Number of spatial dimensions",
@@ -220,6 +233,7 @@
 !     Reading the mesh
       CALL READMSH(list)
 
+      CALL READVELOCITYVTU(VelFilePath)
 !--------------------------------------------------------------------
 !     Reading equations
       nEq = list%srch("Add equation",ll=1)
@@ -379,6 +393,26 @@
          nDOP = (/2,1,2,0/)
          outPuts(1) = out_temperature
          outPuts(2) = out_heatFlux
+
+         CALL READLS(lSolver_GMRES, lEq, list)
+!     HEAT FLUID advection diffusion solver -------------------------
+      CASE ('RT')
+         lEq%phys = phys_RT
+
+!         propL(1,1) = start_cycle ! first time-step (beginning of the cycle)
+!         propL(2,1) = end_cycle ! last time-step
+!         propL(3,1) = increment ! increment between solution files
+!         propL(4,1) = velFName ! velocity field file
+!         propL(5,1) = sStep ! sub time-steps between solution files
+         propL(1,1) = conductivity
+         propL(2,1) = source_term
+
+         CALL READDOMAIN(lEq, propL, list)
+
+         nDOP = (/3,1,2,0/)
+         outPuts(1) = out_temperature
+         outPuts(2) = out_heatFlux
+         outPuts(3) = out_velocity    
 
          CALL READLS(lSolver_GMRES, lEq, list)
 !     HEAT SOLID Laplac equation solver------------------------------
@@ -658,6 +692,12 @@
                lPtr => lPD%get(rtmp,"Source term")
             CASE (damping)
                lPtr => lPD%get(rtmp,"Damping")
+!            CASE (start_cycle)
+!               lPtr => lPD%get(rtmp,"First Step")
+!            CASE (end_cycle)
+!               lPtr => lPD%get(rtmp,"Last Step")
+!            CASE (increment)
+!               lPtr => lPD%get(rtmp,"Increment Step")
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

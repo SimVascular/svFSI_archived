@@ -108,6 +108,14 @@
                CALL HEATF2D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
             END IF
 
+         CASE (phys_RT)
+
+            IF (nsd .EQ. 3) THEN
+               CALL HEATF3D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+            ELSE
+               CALL HEATF2D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+            END IF
+
          CASE (phys_lElas)
             IF (nsd .EQ. 3) THEN
                CALL LELAS3D(eNoN, w, N, Nx, al, dl, lR, lK)

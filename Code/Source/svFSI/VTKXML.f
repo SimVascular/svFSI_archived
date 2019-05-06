@@ -68,6 +68,7 @@
       CALL getVTK_pointCoords(vtu, tmpX, iStat)
       IF (iStat .LT. 0) err = "VTU file read error (coords)"
       x(:,:) = tmpX(1:nsd,:)
+
       deALLOCATE(tmpX)
       
       ALLOCATE(lM%gIEN(lM%eNoN,lM%gnEl))
@@ -286,14 +287,13 @@
                l  = eq(iEq)%output(iOut)%l
                s  = eq(iEq)%s + eq(iEq)%output(iOut)%o
                e  = s + l - 1
-
                cOut = cOut + 1
                is   = outS(cOut)
                ie   = is + l - 1
+
                outS(cOut+1)   = ie + 1
                outNames(cOut) = eq(iEq)%sym//"_"//
      2            TRIM(eq(iEq)%output(iOut)%name)
-
                oGrp = eq(iEq)%output(iOut)%grp
                SELECT CASE (oGrp)
                   CASE (outGrp_NA)
@@ -306,7 +306,12 @@
                CASE (outGrp_Y)
                   DO a=1, msh(iM)%nNo
                      Ac = msh(iM)%gN(a)
-                     d(iM)%x(is:ie,a) = lY(s:e,Ac)
+                     IF (outNames(cOut) .EQ. "HF_Velocity") THEN
+                        e = l - 1
+                        d(iM)%x(is:ie,a) = lY(1:nsd,Ac)
+                     ELSE
+                        d(iM)%x(is:ie,a) = lY(s:e,Ac)
+                     END IF
                   END DO
                CASE (outGrp_D)
                   DO a=1, msh(iM)%nNo
@@ -956,4 +961,52 @@
       RETURN
       END SUBROUTINE READVTUS
 
+!**********************************************************************
+
+      SUBROUTINE READVELOCITYVTU(fName)
+      
+      USE COMMOD
+      USE LISTMOD
+      USE ALLFUN
+      USE vtkXMLMod
+      
+      IMPLICIT NONE
+      
+!      REAL(KIND=8), INTENT(INOUT) :: tmpU(nsd,gtnNo,i)
+      CHARACTER(LEN=STDL) :: fName, nStep
+      
+      TYPE(vtkXMLType) :: vtu
+      
+      INTEGER :: iStat, iEq, iOut, iM, l, s, e, a, b, Ac, nNo, oGrp
+      INTEGER :: i, j, cStep
+      CHARACTER(LEN=stdL) :: varName
+      REAL(KIND=8), ALLOCATABLE :: tmpS(:,:), tmpGS(:,:)
+      i = (lStep - fStep)/iStep + 1
+      ALLOCATE (allU(nsd,gtnNo,i))
+      print *, fStep
+      iStat = 0
+      CALL loadVTK(vtu, fName, iStat)
+      IF (iStat .LT. 0) err = "VTU file read error (init)"
+      
+      CALL getVTK_numPoints(vtu, nNo, iStat)
+      IF (iStat .LT. 0) err = "VTU file read error (num points)"
+      IF (nNo .NE. SUM(msh(:)%gnNo)) 
+     2   err = "Incompatible mesh and "//TRIM(fName)
+      j=0
+      ALLOCATE(tmpGS(nsd,gtnNo))
+      DO cStep=fStep, lStep, iStep
+         WRITE(nStep,*) cStep
+         print *, TRIM(ADJUSTL(nStep))
+         varName="velocity"//"_00"//TRIM(ADJUSTL(nStep))
+         print *, varName
+         CALL getVTK_pointData(vtu, TRIM(varName), tmpGS, iStat)
+         IF (iStat .LT. 0) err ="VTU file read error (point data)"
+         j=j+1
+         allU(:,:,j) = tmpGS
+
+      END DO
+      CALL flushVTK(vtu)
+      
+      RETURN
+      END SUBROUTINE READVELOCITYVTU
 !**********************************************************************

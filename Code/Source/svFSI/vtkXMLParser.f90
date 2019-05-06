@@ -251,9 +251,12 @@
          type(vtkXMLType), intent(inout) :: vtk
          character(len=*), intent(in) :: fName
          integer(IK) :: istat
-
+         print *, fName
          istat = 0
          inquire(file=trim(fName), exist=flag)
+         print *, trim(fName)
+         print *, flag
+         print *, "check"
          if ( .not.flag ) then
             write(stdout,ftab4) &
                "ERROR: File "//trim(fName)//" does not exist"
@@ -270,8 +273,8 @@
             istat=-1; return
          end select
 
-!         write(stdout,ftab1) "<VTK XML Parser> Loading file <-----"// &
-!            "  "//trim(fName)
+         write(stdout,ftab1) "<VTK XML Parser> Loading file <-----"// &
+            "  "//trim(fName)
          call initVTKXMLlib
 
          call initVTKXMLstruct(vtk,fName)
