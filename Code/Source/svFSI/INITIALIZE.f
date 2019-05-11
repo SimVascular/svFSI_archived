@@ -282,7 +282,6 @@
 
 !     Preparing TXT files
       CALL TXT(.TRUE.)
-
 !     Printing the first line and initializing timeP
       CALL OUTRESULT(timeP, 1, 1)
       rmsh%flag(:) = .FALSE.

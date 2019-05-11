@@ -207,14 +207,15 @@
       INTEGER, INTENT(IN) :: u
       REAL(KIND=8) vInteg
 
-      INTEGER a, e, g, Ac, i, iM, eNoN
-      REAL(KIND=8) Jac, tmp(nsd,nsd), sHat, rtmp
+      INTEGER a, e, g, Ac, i, iM, eNoN, chk
+      REAL(KIND=8) Jac, tmp(nsd,nsd), sHat, rtmp, Of
       REAL(KIND=8), ALLOCATABLE :: xl(:,:), Nx(:,:)
 
       IF (SIZE(s,2) .NE. tnNo)
      2   err = "Incompatible vector size in Integ"
 
       vInteg = 0D0
+     
       DO iM=1, nMsh
          eNoN = msh(iM)%eNoN
          IF (iM .NE. 1) DEALLOCATE(xl, Nx)
@@ -223,6 +224,7 @@
             IF (dId.GT.0 .AND. ALLOCATED(msh(iM)%eId)) THEN
                IF (.NOT.BTEST(msh(iM)%eId(e),dId)) CYCLE
             END IF
+            
 !     Updating the shape functions, if this is a NURB
             IF (msh(iM)%eType .EQ. eType_NRB) CALL NRBNNX(msh(iM), e)
             DO a=1, eNoN
@@ -237,8 +239,11 @@
                IF (ISZERO(Jac)) err = "Jac < 0 @ element "//e
 
                sHat = 0D0
+               chk = 0
+               Of = 1D0
                DO a=1, eNoN
                   Ac = msh(iM)%IEN(a,e)
+                  IF (tagRT(Ac) .EQ. 1) chk = chk + 1
                   IF (l .EQ. u) THEN
                      rtmp = s(l,Ac)
                   ELSE
@@ -246,15 +251,20 @@
                   END IF
                   sHat = sHat + rtmp*msh(iM)%N(a,g)
                END DO
-               vInteg = vInteg + msh(iM)%w(g)*Jac*sHat
+               IF (dId .EQ. -1) THEN
+                  IF (chk .LT. 4) Of = 0D0 
+               END IF
+               
+               vInteg = vInteg + msh(iM)%w(g)*Of*Jac*sHat
+
             END DO
          END DO
       END DO
-
+      
       IF (cm%seq()) RETURN
       CALL MPI_ALLREDUCE(vInteg, sHat, 1, mpreal, MPI_SUM, cm%com(), i)
       vInteg = sHat
-
+      
       RETURN
       END FUNCTION vInteg
 

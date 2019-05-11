@@ -233,7 +233,8 @@
 !     Reading the mesh
       CALL READMSH(list)
 
-      CALL READVELOCITYVTU(VelFilePath)
+      IF (VelFileFlag) CALL READVELOCITYVTU(VelFilePath)
+
 !--------------------------------------------------------------------
 !     Reading equations
       nEq = list%srch("Add equation",ll=1)
@@ -269,6 +270,22 @@
             IF (.NOT.mvMsh) err = "mesh equation can only"//
      2         " be specified after FSI equation"
          END IF
+         IF (eq(iEq)%phys .EQ. phys_RT) THEN
+!     2      eq(iEq)%dmn(1)%prop(roi) .EQ. 1) THEN
+            ALLOCATE(tagRT(gtnNo))
+            OPEN (1, FILE='tagFile')
+            READ(1,*) i
+            IF (i .NE. gtnNo) THEN
+               PRINT *, "ERROR: tagFile number of nodes does not",
+     2            " match with the mesh"
+            END IF
+            DO i=1, gtnNo
+               READ(1,*) tagRT(i)
+            END DO 
+            CLOSE(1)
+
+         END IF
+
       END DO
       IF (.NOT.ALLOCATED(cplBC%xo)) THEN
          cplBC%nX = 0
@@ -406,6 +423,7 @@
 !         propL(5,1) = sStep ! sub time-steps between solution files
          propL(1,1) = conductivity
          propL(2,1) = source_term
+         propL(3,1) = roi
 
          CALL READDOMAIN(lEq, propL, list)
 
@@ -692,12 +710,8 @@
                lPtr => lPD%get(rtmp,"Source term")
             CASE (damping)
                lPtr => lPD%get(rtmp,"Damping")
-!            CASE (start_cycle)
-!               lPtr => lPD%get(rtmp,"First Step")
-!            CASE (end_cycle)
-!               lPtr => lPD%get(rtmp,"Last Step")
-!            CASE (increment)
-!               lPtr => lPD%get(rtmp,"Increment Step")
+            CASE (roi)
+               lPtr => lPD%get(rtmp,"RT1")
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

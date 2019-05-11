@@ -76,13 +76,14 @@
 !     Density of fluid, viscosity of fluid, density of solid, elsticity
 !     modulus, Poisson's ratio, conductivity, internal force(X,Y,Z),
 !     particles diameter, particle density, stabilization coefficient
-!     for backflow divergence
+!     for backflow divergence, source term, damping, region of interest
+!     for RT calculation
       INTEGER, PARAMETER :: prop_NA = 0, fluid_density = 1,
      2   viscosity = 2, solid_density = 3, elasticity_modulus = 4,
      3   poisson_ratio = 5, conductivity = 6, f_x = 7, f_y = 8, f_z = 9,
      4   particle_diameter = 10, particle_density = 11,
      5   permeability = 12, backflow_stab = 13, source_term = 14,
-     6   damping = 15
+     6   damping = 15, roi = 16
 
 !     Types of accepted elements
 !     Linear (1D), triangle (2D), tetrahedral (3D), bilinear (2D), quad
@@ -671,6 +672,8 @@
       INTEGER, ALLOCATABLE :: ltg(:)
 !     Row pointer (for sparse LHS matrix structure)
       INTEGER, ALLOCATABLE :: rowPtr(:)
+!     Region of interest nodes (RT calculation)
+      INTEGER, ALLOCATABLE :: tagRT(:)
 
 !     Old time derivative of variables (acceleration)
       REAL(KIND=8), ALLOCATABLE :: Ao(:,:)

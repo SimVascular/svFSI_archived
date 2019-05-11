@@ -47,7 +47,7 @@
       LOGICAL :: flag
       INTEGER :: iEq, iM, iFa, a, e, Ac, i, j
 
-      INTEGER, ALLOCATABLE :: part(:), gmtl(:)
+      INTEGER, ALLOCATABLE :: part(:), gmtl(:), tmpRT(:)
       REAL, ALLOCATABLE :: iWgt(:)
       REAL(KIND=8), ALLOCATABLE :: wgt(:,:), wrk(:), tmpX(:,:), 
      2   tmpU(:,:,:)
@@ -191,6 +191,18 @@
          allU = LOCAL(tmpU)
          DEALLOCATE(tmpU)
       END IF
+
+!     Distributing tagFile node info to processors
+      IF (cm%mas()) THEN
+         ALLOCATE(tmpRT(gtnNo))
+         tmpRT = tagRT
+         DEALLOCATE(tagRT)
+      ELSE
+         ALLOCATE(tmpRT(0))
+      END IF
+      ALLOCATE(tagRT(tnNo))
+      tagRT = LOCAL(tmpRT)
+      DEALLOCATE(tmpRT)
 
 !     Distributing lM%dmnId if present to processors
       flag = ALLOCATED(dmnId)

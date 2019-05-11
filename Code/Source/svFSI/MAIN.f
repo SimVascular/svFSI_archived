@@ -54,7 +54,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
       LOGICAL, ALLOCATABLE :: isS(:)
       INTEGER, ALLOCATABLE :: ptr(:), incL(:), ltgReordered(:)
       REAL(KIND=8), ALLOCATABLE :: xl(:,:), Ag(:,:), al(:,:), Yg(:,:),
-     2   yl(:,:), Dg(:,:), dl(:,:), dol(:,:), fNl(:,:), res(:),
+     2   yl(:,:), Dg(:,:), dl(:,:), dol(:,:), fNl(:,:), res(:), tl(:),
      3   RTrilinos(:,:), dirW(:,:)
 
 !--------------------------------------------------------------------
@@ -227,8 +227,8 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
                i    = nsd + 2
                j    = 2*nsd + 1
                ALLOCATE(al(tDof,eNoN), yl(tDof,eNoN), dl(tDof,eNoN),
-     2            dol(nsd,eNoN), xl(nsd,eNoN), fNl(nsd,eNoN),
-     3            ptr(eNoN))
+     2            dol(nsd,eNoN), xl(nsd,eNoN), fNl(nsd,eNoN), 
+     3            tl(eNoN), ptr(eNoN))
 !$OMP DO SCHEDULE(GUIDED,mpBs)
                DO e=1, msh(iM)%nEl
                   fNl = 0D0
@@ -240,6 +240,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
                      yl(:,a) = Yg(:,Ac)
                      IF (velFileFlag) yl(1:nsd, a)= Yn(1:nsd,Ac)
                      dl(:,a) = Dg(:,Ac)
+                     IF (eq(cEq)%phys .EQ. phys_RT) tl(a) = tagRT(Ac)
                      IF (mvMsh) THEN
                         dol(:,a) = Do(i:j,Ac)
                      END IF
@@ -247,10 +248,10 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
                   END DO
 !     Add contribution of current equation to the LHS/RHS
                   CALL CONSTRUCT(msh(iM), al, yl, dl, dol, xl, fNl,
-     2               ptr, e)
+     2               tl, ptr, e)
                END DO
 !$OMP END DO
-               DEALLOCATE(al, yl, dl, xl, dol, fNl, ptr)
+               DEALLOCATE(al, yl, dl, xl, dol, tl, fNl, ptr)
                dbg = "Mesh "//iM//" is assembled"
             END DO
 
