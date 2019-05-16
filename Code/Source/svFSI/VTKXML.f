@@ -997,7 +997,11 @@
       DO cStep=fStep, lStep, iStep
          WRITE(nStep,*) cStep
          print *, TRIM(ADJUSTL(nStep))
-         varName="velocity"//"_00"//TRIM(ADJUSTL(nStep))
+         IF (cstep .LT. 1000) THEN
+            varName="velocity"//"_00"//TRIM(ADJUSTL(nStep))
+         ELSE
+            varName="velocity"//"_0"//TRIM(ADJUSTL(nStep))
+         END IF
          print *, varName
          CALL getVTK_pointData(vtu, TRIM(varName), tmpGS, iStat)
          IF (iStat .LT. 0) err ="VTU file read error (point data)"
