@@ -243,7 +243,7 @@
                Of = 1D0
                DO a=1, eNoN
                   Ac = msh(iM)%IEN(a,e)
-                  IF (tagRT(Ac) .EQ. 1) chk = chk + 1
+                  IF (dId .EQ. 1 .AND. tagRT(Ac) .EQ. 1) chk = chk + 1
                   IF (l .EQ. u) THEN
                      rtmp = s(l,Ac)
                   ELSE

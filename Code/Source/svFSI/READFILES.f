@@ -261,9 +261,13 @@
          lPtr => list%get(ctmp,"Add equation",1)
          IF ((eq(iEq)%phys .EQ. phys_BBO) .OR.
      2       (eq(iEq)%phys .EQ. phys_heatF)) THEN
-            IF (ctmp.NE."fluid" .AND. ctmp.NE."FSI") THEN
-               err = "BBO/heatF equation has to be specified after"//
-     2            " fluid/FSI equation"
+            IF (velFileFlag) THEN
+                print *, "Reading pre-computed velocity field"
+            ELSE
+               IF (ctmp.NE."fluid" .AND. ctmp.NE."FSI") THEN
+                  err = "BBO/heatF equation has to be specified after"//
+     2               " fluid/FSI equation"
+               END IF
             END IF
          END IF
          IF (eq(iEq)%phys .EQ. phys_mesh) THEN
@@ -405,6 +409,7 @@
 
          propL(1,1) = conductivity
          propL(2,1) = source_term
+         propL(3,1) = initial_condition
          CALL READDOMAIN(lEq, propL, list)
 
          nDOP = (/2,1,2,0/)
@@ -712,6 +717,8 @@
                lPtr => lPD%get(rtmp,"Damping")
             CASE (roi)
                lPtr => lPD%get(rtmp,"RT1")
+            CASE (initial_condition)
+               lPtr => lPD%get(rtmp,"Initial Condition")
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

@@ -193,17 +193,18 @@
       END IF
 
 !     Distributing tagFile node info to processors
-      IF (cm%mas()) THEN
-         ALLOCATE(tmpRT(gtnNo))
-         tmpRT = tagRT
-         DEALLOCATE(tagRT)
-      ELSE
-         ALLOCATE(tmpRT(0))
+      IF (ALLOCATED(tagRT)) THEN
+         IF (cm%mas()) THEN
+            ALLOCATE(tmpRT(gtnNo))
+            tmpRT = tagRT
+            DEALLOCATE(tagRT)
+         ELSE
+            ALLOCATE(tmpRT(0))
+         END IF
+         ALLOCATE(tagRT(tnNo))
+         tagRT = LOCAL(tmpRT)
+         DEALLOCATE(tmpRT)
       END IF
-      ALLOCATE(tagRT(tnNo))
-      tagRT = LOCAL(tmpRT)
-      DEALLOCATE(tmpRT)
-
 !     Distributing lM%dmnId if present to processors
       flag = ALLOCATED(dmnId)
       CALL cm%bcast(flag)

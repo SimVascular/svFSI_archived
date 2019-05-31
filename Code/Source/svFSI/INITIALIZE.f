@@ -74,10 +74,11 @@
             eq(iEq)%sym = 'NS'
          CASE (phys_heatF)
             eq(iEq)%dof = 1
+            IF (velFileFlag) tDof = tDof + nsd
             eq(iEq)%sym = 'HF'
          CASE (phys_RT)
-            tDof = nsd
             eq(iEq)%dof = 1
+            IF (velFileFlag) tDof = tDof + nsd
             eq(iEq)%sym = 'HF'
          CASE (phys_heatS)
             eq(iEq)%dof = 1
@@ -196,7 +197,7 @@
                ELSE
                   IF (cm%mas()) wrn = TRIM(fName)//" can not be opened"
                   CALL ZEROINIT
-               END IF
+               END IF 
             END IF
             IF (rmsh%isReqd) THEN
                rmsh%fTS = (cTS/rmsh%fTS + 1)*rmsh%freq
@@ -214,6 +215,12 @@
             END IF
          ELSE
             CALL ZEROINIT
+            DO iEq=1, nEq
+               IF(eq(iEq)%dmn(cDmn)%prop(initial_condition).NE.0) THEN
+                  Yo(eq(iEq)%s,:)=1D0
+               END IF
+            END DO
+            
          END IF ! stFileFlag
          rsTS = cTS
       ELSE
@@ -306,6 +313,7 @@
       eq%iNorm = 0D0
 
       Ao = 0D0
+      Yo = 0D0
       Yo = 0D0
       Do = 0D0
 

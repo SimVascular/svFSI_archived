@@ -104,13 +104,12 @@
 
          CASE (phys_heatF)
             IF (nsd .EQ. 3) THEN
-               CALL HEATF3D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+               CALL HEATF3D(eNoN, w, N, Nx, al, yl,tl, ksix, lR, lK)
             ELSE
                CALL HEATF2D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
             END IF
 
          CASE (phys_RT)
-
             IF (nsd .EQ. 3) THEN
                CALL HEATF3D(eNoN, w, N, Nx, al, yl, tl, ksix, lR, lK)
             ELSE
