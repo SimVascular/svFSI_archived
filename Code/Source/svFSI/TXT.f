@@ -165,13 +165,12 @@
 
       fid = 1
 
-      print *, "case RT"
+      
       IF (lEq%phys .EQ. phys_RT) THEN
          ALLOCATE(s(1,tnNo))
          s = 1D0
          v = Integ(-1, s, 1, 1)
-         print *, v
-         print *, "case RT"
+
          IF (cm%mas()) THEN
             OPEN(fid,FILE="Volume.dat")
             WRITE(fid,*) v

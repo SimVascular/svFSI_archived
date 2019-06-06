@@ -254,9 +254,6 @@
          print *, fName
          istat = 0
          inquire(file=trim(fName), exist=flag)
-         print *, trim(fName)
-         print *, flag
-         print *, "check"
          if ( .not.flag ) then
             write(stdout,ftab4) &
                "ERROR: File "//trim(fName)//" does not exist"

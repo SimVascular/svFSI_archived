@@ -983,7 +983,6 @@
       REAL(KIND=8), ALLOCATABLE :: tmpS(:,:), tmpGS(:,:)
       i = (lStep - fStep)/iStep + 1
       ALLOCATE (allU(nsd,gtnNo,i))
-      print *, fStep
       iStat = 0
       CALL loadVTK(vtu, fName, iStat)
       IF (iStat .LT. 0) err = "VTU file read error (init)"
@@ -996,7 +995,6 @@
       ALLOCATE(tmpGS(nsd,gtnNo))
       DO cStep=fStep, lStep, iStep
          WRITE(nStep,*) cStep
-         print *, TRIM(ADJUSTL(nStep))
          IF (cstep .LT. 1000) THEN
             varName="velocity"//"_00"//TRIM(ADJUSTL(nStep))
          ELSE
