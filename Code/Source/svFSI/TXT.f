@@ -86,10 +86,6 @@
             s = eq(iEq)%s + eq(iEq)%output(iOut)%o
             e = s + l - 1
 
-!            IF (eq(iEq)%phys .EQ. phys_RT) THEN
-!               tmpS = vInteg(-1,Yo,eq(iEq)%s,eq(iEq)%s)
-!            END IF
-
             oGrp = eq(iEq)%output(iOut)%grp
             SELECT CASE (oGrp)
             CASE (outGrp_NA)
@@ -169,13 +165,12 @@
       IF (lEq%phys .EQ. phys_RT) THEN
          ALLOCATE(s(1,tnNo))
          s = 1D0
-         v = Integ(-1, s, 1, 1)
+         v = Integ(0, s, 1, 1)
 
          IF (cm%mas()) THEN
             OPEN(fid,FILE="Volume.dat")
             WRITE(fid,*) v
             CLOSE(fid)
-            print *, "case RT"
             OPEN(fid, FILE="int_r.dat")
             CLOSE(fid)
          END IF
@@ -231,21 +226,7 @@
          WRITE(fid,*) 
          CLOSE(fid)
       END DO
-!      print *, "case RT"
-!      IF (lEq%phys .EQ. phys_RT) THEN
-!         fid = 100
-!         ALLOCATE(s(1,tnNo))
-!         s = 1D0
-!         v = Integ(-1, s, 1, 1)
-!         print *, "case RT"
-!         OPEN(fid,FILE="Volume.dat")
-!         WRITE(fid,'(A)', ADVANCE='NO') v
-!         CLOSE(fid)
-!         print *, "case RT"
-!         fid = 101
-!         OPEN(fid, FILE="int_r.dat")
-!         CLOSE(fid)
-!      END IF
+
 
       RETURN
       END SUBROUTINE CCTXT
@@ -304,18 +285,7 @@
             CLOSE(fid)
          END IF
       END DO
-      
-!      IF (lEq%phys .EQ. phys_RT) THEN
-!         tmp = vInteg(-1,tmpV,lEq%s,lEq%s)
-!         print *, tmp
-!         IF (cm%mas()) THEN
-!            print *, "hi ", tmp 
-!            OPEN(fid, FILE="int_r.dat", STATUS='OLD',
-!     2      POSITION='APPEND')
-!            WRITE(fid,*) tmp
-!            CLOSE(fid)
-!         END IF
-!      END IF
+
 
       RETURN
       END SUBROUTINE WTXT
@@ -333,7 +303,7 @@
       INTEGER fid
       REAL(KIND=8) tmp
       fid = 1
-      tmp = Integ(-1,tmpV,1,1)
+      tmp = Integ(0,tmpV,1,1)
 
       IF (cm%mas()) THEN
          OPEN(fid, FILE='int_r.dat', STATUS='OLD',

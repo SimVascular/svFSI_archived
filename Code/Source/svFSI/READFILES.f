@@ -275,7 +275,6 @@
      2         " be specified after FSI equation"
          END IF
          IF (eq(iEq)%phys .EQ. phys_RT) THEN
-!     2      eq(iEq)%dmn(1)%prop(roi) .EQ. 1) THEN
             ALLOCATE(tagRT(gtnNo))
             OPEN (1, FILE='tagFile')
             READ(1,*) i
@@ -420,16 +419,8 @@
 !     HEAT FLUID advection diffusion solver -------------------------
       CASE ('RT')
          lEq%phys = phys_RT
-
-!         propL(1,1) = start_cycle ! first time-step (beginning of the cycle)
-!         propL(2,1) = end_cycle ! last time-step
-!         propL(3,1) = increment ! increment between solution files
-!         propL(4,1) = velFName ! velocity field file
-!         propL(5,1) = sStep ! sub time-steps between solution files
          propL(1,1) = conductivity
          propL(2,1) = source_term
-         propL(3,1) = roi
-
          CALL READDOMAIN(lEq, propL, list)
 
          nDOP = (/3,1,2,0/)
@@ -715,10 +706,8 @@
                lPtr => lPD%get(rtmp,"Source term")
             CASE (damping)
                lPtr => lPD%get(rtmp,"Damping")
-            CASE (roi)
-               lPtr => lPD%get(rtmp,"RT1")
             CASE (initial_condition)
-               lPtr => lPD%get(rtmp,"Initial Condition")
+               lPtr => lPD%get(rtmp,"Initial Condition",1)
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

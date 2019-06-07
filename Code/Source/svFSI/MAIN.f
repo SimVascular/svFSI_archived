@@ -83,7 +83,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 !     Processors
       CALL DISTRIBUTE
 
-
+      
 !     Initializing the solution vectors and constructing LHS matrix
 !     format
       CALL INITIALIZE(timeP)
@@ -91,7 +91,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 !      IF (velFileFlag) THEN
 !         CALL READVELOCITY
 !      END IF 
-
+      
 !     only compute once
       IF (useTrilinosLS .OR. useTrilinosAssemAndLS) THEN
          ALLOCATE(ltgReordered(tnNo))
@@ -122,7 +122,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 !     Outer loop for marching in time. When entring this loop, all old
 !     variables are completely set and satisfy BCs.
       IF (cTS .LE. nITS) dt = dt/1D1
-
+      
       DO
 !     Adjusting the time step size once initialization stage is over
          IF (cTS .EQ. nITS) THEN
@@ -146,7 +146,6 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 !     Predictor step
          CALL PICP
          CALL SETBCDIR(An, Yn, Dn)
-
          IF (velFileFlag) THEN
              n = MOD(cTS,ntpoints*iStep)
 

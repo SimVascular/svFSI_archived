@@ -52,9 +52,10 @@
       TYPE(FSILS_commuType) :: communicator
 
       REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) :: s
-
+      REAL(KIND=8) ini_c
       INTEGER :: iM, i
       CHARACTER(LEN=stdL) :: sTmp, fTmp
+     
 
       tDof     = 0
       dFlag    = .FALSE.
@@ -216,9 +217,12 @@
          ELSE
             CALL ZEROINIT
             DO iEq=1, nEq
-               IF(eq(iEq)%dmn(cDmn)%prop(initial_condition).NE.0) THEN
-                  Yo(eq(iEq)%s,:)=1D0
-               END IF
+               DO iDmn=1, eq(iEq)%nDmn
+                  IF(eq(iEq)%dmn(iDmn)%prop(initial_condition).NE.0)THEN       
+                     Yo(eq(iEq)%s,:) =
+     2                  eq(iEq)%dmn(iDmn)%prop(initial_condition)
+                  END IF
+               END DO
             END DO
             
          END IF ! stFileFlag
@@ -266,6 +270,7 @@
       ALLOCATE(s(1,tnNo))
       s = 1D0
       DO iEq=1, nEq
+         
          DO iDmn=1, eq(iEq)%nDmn
             eq(iEq)%dmn(iDmn)%v = Integ(eq(iEq)%dmn(iDmn)%Id, s, 1, 1)
             IF (ISZERO(eq(iEq)%dmn(iDmn)%v)) wrn = "Volume of "//
@@ -275,6 +280,7 @@
             END IF
          END DO
       END DO
+
 
 
 !     Predicting new variables
@@ -289,11 +295,11 @@
 
 !     Preparing TXT files
       CALL TXT(.TRUE.)
+
 !     Printing the first line and initializing timeP
       CALL OUTRESULT(timeP, 1, 1)
       rmsh%flag(:) = .FALSE.
       resetSim = .FALSE.
-
 
       RETURN
       CONTAINS

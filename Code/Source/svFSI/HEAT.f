@@ -51,13 +51,12 @@
       REAL(KIND=8), PARAMETER :: ct(4) = (/4D0,1D0,3D0,1D0/)
       INTEGER i, a, b
       REAL(KIND=8) nu, tauM, kU, kS, nTx, Tp, udTx, udNx(eNoN), T1, 
-     2   amd, wl, Td, Tx(nsd), u(nsd), s, s_roi, fs
+     2   amd, wl, Td, Tx(nsd), u(nsd), s, fs
  
       T1  = eq(cEq)%af*eq(cEq)%gam*dt
       amd = eq(cEq)%am/T1
       nu  = eq(cEq)%dmn(cDmn)%prop(conductivity)
       s   = eq(cEq)%dmn(cDmn)%prop(source_term)
-      s_roi   = eq(cEq)%dmn(cDmn)%prop(roi)
       i   = eq(cEq)%s
       
 

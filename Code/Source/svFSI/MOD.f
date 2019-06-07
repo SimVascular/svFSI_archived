@@ -83,7 +83,7 @@
      3   poisson_ratio = 5, conductivity = 6, f_x = 7, f_y = 8, f_z = 9,
      4   particle_diameter = 10, particle_density = 11,
      5   permeability = 12, backflow_stab = 13, source_term = 14,
-     6   damping = 15, roi = 16, initial_condition = 17
+     6   damping = 15, initial_condition = 16
 
 !     Types of accepted elements
 !     Linear (1D), triangle (2D), tetrahedral (3D), bilinear (2D), quad
