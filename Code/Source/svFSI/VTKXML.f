@@ -971,15 +971,14 @@
       USE vtkXMLMod
       
       IMPLICIT NONE
-      
-!      REAL(KIND=8), INTENT(INOUT) :: tmpU(nsd,gtnNo,i)
+
       CHARACTER(LEN=STDL) :: fName, nStep
       
       TYPE(vtkXMLType) :: vtu
       
       INTEGER :: iStat, iEq, iOut, iM, l, s, e, a, b, Ac, nNo, oGrp
-      INTEGER :: i, j, cStep
-      CHARACTER(LEN=stdL) :: varName
+      INTEGER :: i, j, iTS, iVel, zp
+      CHARACTER(LEN=stdL) :: varName, velName
       REAL(KIND=8), ALLOCATABLE :: tmpS(:,:), tmpGS(:,:)
       i = (lStep - fStep)/iStep + 1
       ALLOCATE (allU(nsd,gtnNo,i))
@@ -993,16 +992,57 @@
      2   err = "Incompatible mesh and "//TRIM(fName)
       j=0
       ALLOCATE(tmpGS(nsd,gtnNo))
-      DO cStep=fStep, lStep, iStep
-         WRITE(nStep,*) cStep
-         IF (cstep .LT. 1000) THEN
-            varName="velocity"//"_00"//TRIM(ADJUSTL(nStep))
+
+      iStat = -1
+      iVel = 0
+      zp = 0
+
+      IF (iTS .GE. 1000) THEN
+         fName = STR(fStep)
+      ELSE
+         WRITE(fName,'(I3.3)') fStep
+      END IF
+
+      DO WHILE(iStat .LT. 0)
+         iVel = iVel + 1
+         iStat = 0
+         SELECT CASE (iVel)
+         CASE(1)
+            velName = "velocity"
+         CASE(2)
+            velName = "NS_Velocity"
+         CASE(3)
+            velName = "FS_Velocity"
+         CASE(4)
+            zp = 1
+            WRITE(fName,'(I4.4)') fStep
+            velName = "velocity"
+         CASE(5)
+            err ="VTU file read error (point data)"
+         END SELECT
+         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(fName))
+         IF (iVel .EQ. 4) THEN
+            PRINT *, "Try format <"//TRIM(velName)//"_00>"
          ELSE
-            varName="velocity"//"_0"//TRIM(ADJUSTL(nStep))
+            PRINT *, "Try format <"//TRIM(velName)//"_0>"
          END IF
-         print *, varName
+         CALL getVTK_pointData(vtu, TRIM(varName), tmpGS, iStat)
+      END DO
+
+
+      DO iTS=fStep, lStep, iStep
+         IF (iTS .GE. 1000) THEN
+            fName = STR(iTS)
+         ELSEIF (zp .EQ. 1) THEN
+            WRITE(fName,'(I4.4)') iTS
+         ELSE
+            WRITE(fName,'(I3.3)') iTS
+         END IF
+
+         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(fName))
          CALL getVTK_pointData(vtu, TRIM(varName), tmpGS, iStat)
          IF (iStat .LT. 0) err ="VTU file read error (point data)"
+
          j=j+1
          allU(:,:,j) = tmpGS
 

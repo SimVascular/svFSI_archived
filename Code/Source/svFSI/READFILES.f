@@ -46,7 +46,7 @@
 
       LOGICAL :: ltmp
       INTEGER :: i, iEq
-      INTEGER :: tArray(8)
+      INTEGER :: tArray(8), check
       REAL(KIND=8) :: roInf
       CHARACTER(LEN=8) :: date
       CHARACTER(LEN=stdL) :: ctmp
@@ -132,8 +132,12 @@
          lPtr => list%get(sepOutput,"Use separator in the history file")
          lPtr => list%get(stFileFlag,"Continue previous simulation",1)
          IF (.NOT.stFileFlag) REWIND(std%fId)
-         lPtr => list%get(velFileFlag,"Use pre-computed velocity",1)
-         IF (.NOT.velFileFlag) REWIND(std%fId)
+         check = list%srch("Use pre-computed velocity")
+         print *, check
+         IF (check .EQ. 1) THEN 
+            lPtr => list%get(velFileFlag,"Use pre-computed velocity",1)
+            IF (.NOT.velFileFlag) REWIND(std%fId)
+         END IF
          CALL DATE_AND_TIME(DATE=date, VALUES=tArray)
          std = "                                               "
          std = " ----------------------------------------------"
@@ -275,11 +279,12 @@
      2         " be specified after FSI equation"
          END IF
          IF (eq(iEq)%phys .EQ. phys_RT) THEN
+            PRINT *, "reading tagfile"
             ALLOCATE(tagRT(gtnNo))
             OPEN (1, FILE='tagFile')
             READ(1,*) i
             IF (i .NE. gtnNo) THEN
-               PRINT *, "ERROR: tagFile number of nodes does not",
+               err ="tagFile number of nodes does not"//
      2            " match with the mesh"
             END IF
             DO i=1, gtnNo
@@ -707,7 +712,7 @@
             CASE (damping)
                lPtr => lPD%get(rtmp,"Damping")
             CASE (initial_condition)
-               lPtr => lPD%get(rtmp,"Initial Condition",1)
+               lPtr => lPD%get(rtmp,"Initial Condition")
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

@@ -193,7 +193,9 @@
       END IF
 
 !     Distributing tagFile node info to processors
-      IF (ALLOCATED(tagRT)) THEN
+      flag = (ALLOCATED(tagRT)) 
+      CALL cm%bcast(flag)
+      IF (flag) THEN     
          IF (cm%mas()) THEN
             ALLOCATE(tmpRT(gtnNo))
             tmpRT = tagRT

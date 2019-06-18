@@ -81,6 +81,7 @@ c      INTEGER OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 !     Doing the partitioning and distributing the data to the all
 !     Processors
+
       CALL DISTRIBUTE
 
       

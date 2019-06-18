@@ -57,6 +57,8 @@
       CHARACTER(LEN=stdL) :: sTmp, fTmp
      
 
+
+
       tDof     = 0
       dFlag    = .FALSE.
       nFacesLS = SUM(eq%nBc)
@@ -79,7 +81,7 @@
             eq(iEq)%sym = 'HF'
          CASE (phys_RT)
             eq(iEq)%dof = 1
-            IF (velFileFlag) tDof = tDof + nsd
+            IF (velFileFlag .AND. tDof .EQ. 0) tDof = tDof + nsd
             eq(iEq)%sym = 'HF'
          CASE (phys_heatS)
             eq(iEq)%dof = 1
@@ -118,12 +120,11 @@
          eq(iEq)%e     = tDof + eq(iEq)%dof
          tDof          = eq(iEq)%e
       END DO
+
       ierr = 0; IF (dFlag) ierr = 1
       i = 0; IF (cplBC%coupled) i = cplBC%nX
-
+      
       stamp = (/cm%np(), nEq, nMsh, tnNo, i, tDof, ierr, version/)
-
-
 
 !     Calculating the record length
       i = 2
