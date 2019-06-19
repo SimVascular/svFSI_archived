@@ -306,12 +306,7 @@
                CASE (outGrp_Y)
                   DO a=1, msh(iM)%nNo
                      Ac = msh(iM)%gN(a)
-                     IF (outNames(cOut) .EQ. "HF_Velocity") THEN
-                        e = l - 1
-                        d(iM)%x(is:ie,a) = lY(1:nsd,Ac)
-                     ELSE
-                        d(iM)%x(is:ie,a) = lY(s:e,Ac)
-                     END IF
+                     d(iM)%x(is:ie,a) = lY(s:e,Ac)
                   END DO
                CASE (outGrp_D)
                   DO a=1, msh(iM)%nNo
@@ -972,7 +967,7 @@
       
       IMPLICIT NONE
 
-      CHARACTER(LEN=STDL) :: fName, nStep
+      CHARACTER(LEN=STDL) :: fName, sName
       
       TYPE(vtkXMLType) :: vtu
       
@@ -997,10 +992,10 @@
       iVel = 0
       zp = 0
 
-      IF (iTS .GE. 1000) THEN
-         fName = STR(fStep)
+      IF (fStep .GE. 1000) THEN
+         sName = STR(fStep)
       ELSE
-         WRITE(fName,'(I3.3)') fStep
+         WRITE(sName,'(I3.3)') fStep
       END IF
 
       DO WHILE(iStat .LT. 0)
@@ -1015,12 +1010,12 @@
             velName = "FS_Velocity"
          CASE(4)
             zp = 1
-            WRITE(fName,'(I4.4)') fStep
+            WRITE(sName,'(I4.4)') fStep
             velName = "velocity"
          CASE(5)
             err ="VTU file read error (point data)"
          END SELECT
-         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(fName))
+         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(sName))
          IF (iVel .EQ. 4) THEN
             PRINT *, "Try format <"//TRIM(velName)//"_00>"
          ELSE
@@ -1032,14 +1027,14 @@
 
       DO iTS=fStep, lStep, iStep
          IF (iTS .GE. 1000) THEN
-            fName = STR(iTS)
+            sName = STR(iTS)
          ELSEIF (zp .EQ. 1) THEN
-            WRITE(fName,'(I4.4)') iTS
+            WRITE(sName,'(I4.4)') iTS
          ELSE
-            WRITE(fName,'(I3.3)') iTS
+            WRITE(sName,'(I3.3)') iTS
          END IF
 
-         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(fName))
+         varName = TRIM(velName)//"_0"//TRIM(ADJUSTL(sName))
          CALL getVTK_pointData(vtu, TRIM(varName), tmpGS, iStat)
          IF (iStat .LT. 0) err ="VTU file read error (point data)"
 

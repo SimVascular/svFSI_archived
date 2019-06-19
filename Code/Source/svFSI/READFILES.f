@@ -133,7 +133,6 @@
          lPtr => list%get(stFileFlag,"Continue previous simulation",1)
          IF (.NOT.stFileFlag) REWIND(std%fId)
          check = list%srch("Use pre-computed velocity")
-         print *, check
          IF (check .EQ. 1) THEN 
             lPtr => list%get(velFileFlag,"Use pre-computed velocity",1)
             IF (.NOT.velFileFlag) REWIND(std%fId)
@@ -171,12 +170,12 @@
          END IF
 
          IF (velFileFlag) THEN
-            lPtr => list%get(fTmp,"Velocity results file path")
+            lPtr => list%get(fTmp,"Velocity results file path",1)
             IF (ASSOCIATED(lPtr))
      2         velFilePath = fTmp%fname
-            lPtr => list%get(fStep,"First time step")
-            lPtr => list%get(lStep,"Last time step")
-            lPtr => list%get(iStep,"Increment time step")
+            lPtr => list%get(fStep,"First time step",1)
+            lPtr => list%get(lStep,"Last time step",1)
+            lPtr => list%get(iStep,"Increment time step",1)
             ntpoints = (lStep - fStep)/iStep + 1
             
          END IF
@@ -279,7 +278,6 @@
      2         " be specified after FSI equation"
          END IF
          IF (eq(iEq)%phys .EQ. phys_RT) THEN
-            PRINT *, "reading tagfile"
             ALLOCATE(tagRT(gtnNo))
             OPEN (1, FILE='tagFile')
             READ(1,*) i
@@ -428,10 +426,10 @@
          propL(2,1) = source_term
          CALL READDOMAIN(lEq, propL, list)
 
-         nDOP = (/3,1,2,0/)
+         nDOP = (/2,1,2,0/)
          outPuts(1) = out_temperature
          outPuts(2) = out_heatFlux
-         outPuts(3) = out_velocity    
+   
 
          CALL READLS(lSolver_GMRES, lEq, list)
 !     HEAT SOLID Laplac equation solver------------------------------

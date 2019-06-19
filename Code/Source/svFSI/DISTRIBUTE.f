@@ -207,6 +207,7 @@
          tagRT = LOCAL(tmpRT)
          DEALLOCATE(tmpRT)
       END IF
+
 !     Distributing lM%dmnId if present to processors
       flag = ALLOCATED(dmnId)
       CALL cm%bcast(flag)

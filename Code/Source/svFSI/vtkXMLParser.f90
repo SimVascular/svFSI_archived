@@ -251,7 +251,6 @@
          type(vtkXMLType), intent(inout) :: vtk
          character(len=*), intent(in) :: fName
          integer(IK) :: istat
-         print *, fName
          istat = 0
          inquire(file=trim(fName), exist=flag)
          if ( .not.flag ) then
