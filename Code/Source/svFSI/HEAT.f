@@ -36,7 +36,7 @@
 !--------------------------------------------------------------------
 
 !     This is for solving heat equation in a fluid.
-      PURE SUBROUTINE HEATF3D (eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+      PURE SUBROUTINE HEATF3D (eNoN, w, N, Nx, al, yl, tl, ksix, lR, lK)
 
       USE COMMOD
       USE ALLFUN
@@ -45,25 +45,32 @@
 
       INTEGER, INTENT(IN) :: eNoN
       REAL(KIND=8), INTENT(IN) :: w, N(eNoN), Nx(nsd,eNoN), 
-     2   al(tDof,eNoN), yl(tDof,eNoN), ksix(nsd,nsd)
+     2   al(tDof,eNoN), yl(tDof,eNoN), ksix(nsd,nsd), tl(eNoN)
       REAL(KIND=8), INTENT(INOUT) :: lR(1,eNoN), lK(1,eNoN,eNoN)
 
       REAL(KIND=8), PARAMETER :: ct(4) = (/4D0,1D0,3D0,1D0/)
       INTEGER i, a, b
       REAL(KIND=8) nu, tauM, kU, kS, nTx, Tp, udTx, udNx(eNoN), T1, 
-     2   amd, wl, Td, Tx(nsd), u(nsd), s
+     2   amd, wl, Td, Tx(nsd), u(nsd), s, fs
  
       T1  = eq(cEq)%af*eq(cEq)%gam*dt
       amd = eq(cEq)%am/T1
       nu  = eq(cEq)%dmn(cDmn)%prop(conductivity)
       s   = eq(cEq)%dmn(cDmn)%prop(source_term)
       i   = eq(cEq)%s
+      
 
       wl  = w*T1
 
+      
+
+      fs = 0D0
       u  = 0D0
-      Td = -s
       Tx = 0D0
+
+      IF (ALL(tl .EQ. 1)) fs =1D0
+      Td = -s -fs
+
       DO a=1, eNoN
          u(1) = u(1) + N(a)*yl(1,a)
          u(2) = u(2) + N(a)*yl(2,a)

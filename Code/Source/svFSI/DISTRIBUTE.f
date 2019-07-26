@@ -45,11 +45,12 @@
       IMPLICIT NONE
 
       LOGICAL :: flag
-      INTEGER :: iEq, iM, iFa, a, e, Ac
+      INTEGER :: iEq, iM, iFa, a, e, Ac, i, j
 
-      INTEGER, ALLOCATABLE :: part(:), gmtl(:)
+      INTEGER, ALLOCATABLE :: part(:), gmtl(:), tmpRT(:)
       REAL, ALLOCATABLE :: iWgt(:)
-      REAL(KIND=8), ALLOCATABLE :: wgt(:,:), wrk(:), tmpX(:,:)
+      REAL(KIND=8), ALLOCATABLE :: wgt(:,:), wrk(:), tmpX(:,:), 
+     2   tmpU(:,:,:)
       TYPE(mshType), ALLOCATABLE :: tMs(:)
 
 !     Preparing IO incase of error or warning. I'm keeping dbg channel
@@ -131,6 +132,7 @@
          CALL cm%bcast(iniFilePath)
          CALL cm%bcast(stFileName)
          CALL cm%bcast(stFileFlag)
+         CALL cm%bcast(velFileFlag)
          CALL cm%bcast(stFileIncr)
          CALL cm%bcast(stFileRepl)
          CALL cm%bcast(saveFormat)
@@ -143,6 +145,10 @@
          CALL cm%bcast(nTS)
          CALL cm%bcast(nEq)
          CALL cm%bcast(dt)
+         CALL cm%bcast(fStep)
+         CALL cm%bcast(lStep)
+         CALL cm%bcast(iStep)
+         CALL cm%bcast(ntpoints)
          CALL cm%bcast(useTrilinosLS)
          CALL cm%bcast(useTrilinosAssemAndLS)
          CALL cm%bcast(zeroAve)
@@ -171,6 +177,36 @@
       ALLOCATE(x(nsd,tnNo))
       x = LOCAL(tmpX)
       DEALLOCATE(tmpX)
+
+!     Distributing allU to processors
+      IF (velFileFlag) THEN
+         IF (cm%mas()) THEN
+            ALLOCATE(tmpU(nsd,gtnNo,ntpoints))
+            tmpU = allU
+            DEALLOCATE(allU)
+         ELSE
+            ALLOCATE(tmpU(0,0,0))
+         END IF
+         ALLOCATE(allU(nsd,tnNo, ntpoints))
+         allU = LOCAL(tmpU)
+         DEALLOCATE(tmpU)
+      END IF
+
+!     Distributing tagFile node info to processors
+      flag = (ALLOCATED(tagRT)) 
+      CALL cm%bcast(flag)
+      IF (flag) THEN     
+         IF (cm%mas()) THEN
+            ALLOCATE(tmpRT(gtnNo))
+            tmpRT = tagRT
+            DEALLOCATE(tagRT)
+         ELSE
+            ALLOCATE(tmpRT(0))
+         END IF
+         ALLOCATE(tagRT(tnNo))
+         tagRT = LOCAL(tmpRT)
+         DEALLOCATE(tmpRT)
+      END IF
 
 !     Distributing lM%dmnId if present to processors
       flag = ALLOCATED(dmnId)

@@ -40,6 +40,7 @@
       USE COMMOD
       USE ALLFUN
 
+
       IMPLICIT NONE
 
       REAL(KIND=8), INTENT(OUT) :: timeP(3)
@@ -51,9 +52,12 @@
       TYPE(FSILS_commuType) :: communicator
 
       REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) :: s
-
+      REAL(KIND=8) ini_c
       INTEGER :: iM, i
       CHARACTER(LEN=stdL) :: sTmp, fTmp
+     
+
+
 
       tDof     = 0
       dFlag    = .FALSE.
@@ -73,6 +77,11 @@
             eq(iEq)%sym = 'NS'
          CASE (phys_heatF)
             eq(iEq)%dof = 1
+            IF (velFileFlag) tDof = tDof + nsd
+            eq(iEq)%sym = 'HF'
+         CASE (phys_RT)
+            eq(iEq)%dof = 1
+            IF (velFileFlag .AND. tDof .EQ. 0) tDof = tDof + nsd
             eq(iEq)%sym = 'HF'
          CASE (phys_heatS)
             eq(iEq)%dof = 1
@@ -111,9 +120,10 @@
          eq(iEq)%e     = tDof + eq(iEq)%dof
          tDof          = eq(iEq)%e
       END DO
+
       ierr = 0; IF (dFlag) ierr = 1
       i = 0; IF (cplBC%coupled) i = cplBC%nX
-
+      
       stamp = (/cm%np(), nEq, nMsh, tnNo, i, tDof, ierr, version/)
 
 !     Calculating the record length
@@ -129,6 +139,9 @@
 
       ALLOCATE(Ao(tDof,tnNo), An(tDof,tnNo), Yo(tDof,tnNo),
      2   Yn(tDof,tnNo), Do(tDof,tnNo), Dn(tDof,tnNo))
+
+
+
 
       IF (.NOT.resetSim) THEN
          IF (.NOT.ALLOCATED(rmsh%flag)) ALLOCATE(rmsh%flag(nMsh))
@@ -186,7 +199,7 @@
                ELSE
                   IF (cm%mas()) wrn = TRIM(fName)//" can not be opened"
                   CALL ZEROINIT
-               END IF
+               END IF 
             END IF
             IF (rmsh%isReqd) THEN
                rmsh%fTS = (cTS/rmsh%fTS + 1)*rmsh%freq
@@ -204,6 +217,15 @@
             END IF
          ELSE
             CALL ZEROINIT
+            DO iEq=1, nEq
+               DO iDmn=1, eq(iEq)%nDmn
+                  IF(eq(iEq)%dmn(iDmn)%prop(initial_condition).NE.0)THEN       
+                     Yo(eq(iEq)%s,:) =
+     2                  eq(iEq)%dmn(iDmn)%prop(initial_condition)
+                  END IF
+               END DO
+            END DO
+            
          END IF ! stFileFlag
          rsTS = cTS
       ELSE
@@ -249,6 +271,7 @@
       ALLOCATE(s(1,tnNo))
       s = 1D0
       DO iEq=1, nEq
+         
          DO iDmn=1, eq(iEq)%nDmn
             eq(iEq)%dmn(iDmn)%v = Integ(eq(iEq)%dmn(iDmn)%Id, s, 1, 1)
             IF (ISZERO(eq(iEq)%dmn(iDmn)%v)) wrn = "Volume of "//
@@ -258,6 +281,8 @@
             END IF
          END DO
       END DO
+
+
 
 !     Predicting new variables
       CALL PICP
@@ -295,6 +320,7 @@
       eq%iNorm = 0D0
 
       Ao = 0D0
+      Yo = 0D0
       Yo = 0D0
       Do = 0D0
 

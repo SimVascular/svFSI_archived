@@ -64,7 +64,7 @@
       END INTERFACE GLOBAL
 
       INTERFACE LOCAL
-         MODULE PROCEDURE LOCALIS, LOCALRV
+         MODULE PROCEDURE LOCALIS, LOCALRV, LOCALRA
       END INTERFACE LOCAL
 
       INTERFACE DESTROY
@@ -207,14 +207,15 @@
       INTEGER, INTENT(IN) :: u
       REAL(KIND=8) vInteg
 
-      INTEGER a, e, g, Ac, i, iM, eNoN
-      REAL(KIND=8) Jac, tmp(nsd,nsd), sHat, rtmp
+      INTEGER a, e, g, Ac, i, iM, eNoN, chk
+      REAL(KIND=8) Jac, tmp(nsd,nsd), sHat, rtmp, Of
       REAL(KIND=8), ALLOCATABLE :: xl(:,:), Nx(:,:)
 
       IF (SIZE(s,2) .NE. tnNo)
      2   err = "Incompatible vector size in Integ"
 
       vInteg = 0D0
+     
       DO iM=1, nMsh
          eNoN = msh(iM)%eNoN
          IF (iM .NE. 1) DEALLOCATE(xl, Nx)
@@ -223,6 +224,7 @@
             IF (dId.GT.0 .AND. ALLOCATED(msh(iM)%eId)) THEN
                IF (.NOT.BTEST(msh(iM)%eId(e),dId)) CYCLE
             END IF
+            
 !     Updating the shape functions, if this is a NURB
             IF (msh(iM)%eType .EQ. eType_NRB) CALL NRBNNX(msh(iM), e)
             DO a=1, eNoN
@@ -237,24 +239,35 @@
                IF (ISZERO(Jac)) err = "Jac < 0 @ element "//e
 
                sHat = 0D0
+               chk = 0
+               Of = 1D0
                DO a=1, eNoN
                   Ac = msh(iM)%IEN(a,e)
+                  IF (ALLOCATED(tagRT)) THEN
+                     IF (dId.EQ.0 .AND. tagRT(Ac).EQ.1) chk = chk + 1
+                  END IF
                   IF (l .EQ. u) THEN
                      rtmp = s(l,Ac)
                   ELSE
                      rtmp = SQRT(NORM(s(l:u,Ac)))
                   END IF
                   sHat = sHat + rtmp*msh(iM)%N(a,g)
+
                END DO
-               vInteg = vInteg + msh(iM)%w(g)*Jac*sHat
+               IF (dId .EQ. 0) THEN
+                  IF (chk .LT. 4) Of = 0D0 
+               END IF
+
+               vInteg = vInteg + msh(iM)%w(g)*Of*Jac*sHat
+
             END DO
          END DO
       END DO
-
+      
       IF (cm%seq()) RETURN
       CALL MPI_ALLREDUCE(vInteg, sHat, 1, mpreal, MPI_SUM, cm%com(), i)
       vInteg = sHat
-
+      
       RETURN
       END FUNCTION vInteg
 
@@ -592,6 +605,54 @@
 
       RETURN
       END FUNCTION LOCALRV
+
+!--------------------------------------------------------------------
+      FUNCTION LOCALRA(U)
+      USE COMMOD
+      IMPLICIT NONE
+      REAL(KIND=8), INTENT(IN) :: U(:,:,:)
+      REAL(KIND=8), ALLOCATABLE :: LOCALRA(:,:,:)
+
+      INTEGER m, s, e, a, Ac, n, j
+      REAL(KIND=8), ALLOCATABLE :: tmpU(:)
+
+      IF (.NOT.ALLOCATED(ltg)) err = "ltg is not set yet"
+      IF (cm%mas()) THEN
+         m = SIZE(U,1)
+         IF (SIZE(U,2) .NE. gtnNo) err = "LOCAL is only"//
+     2      " specified for vector with size gtnNo"
+         n = SIZE(U,3)
+      END IF
+      CALL cm%bcast(m)
+      CALL cm%bcast(n)
+
+      IF (cm%seq()) THEN
+         ALLOCATE(LOCALRA(m,gtnNo,n))
+         LOCALRA = U
+         RETURN
+      END IF
+
+      ALLOCATE(LOCALRA(m,tnNo,n), tmpU(m*gtnNo))
+
+      DO j=1,n
+         IF (cm%mas()) THEN
+            DO a=1, gtnNo
+               s = m*(a-1) + 1
+               e = m*a
+               tmpU(s:e) = U(:,a,j)
+            END DO
+         END IF
+         CALL cm%bcast(tmpU)
+         DO a=1, tnNo
+            Ac = ltg(a)
+            s  = m*(Ac-1) + 1
+            e  = m*Ac
+            LOCALRA(:,a,j) = tmpU(s:e)
+         END DO
+      END DO
+      RETURN
+      END FUNCTION LOCALRA
+
 
 !####################################################################
 !     This function returns the domain that a set of nodes belongs to
@@ -1102,7 +1163,10 @@
       AR = MAXVAL(s)/MINVAL(s)
 
       RETURN
+
+
       END FUNCTION ASPECTRATIO
+
 
 !####################################################################
       
