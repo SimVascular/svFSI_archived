@@ -46,7 +46,7 @@
 
       LOGICAL :: ltmp
       INTEGER :: i, iEq
-      INTEGER :: tArray(8)
+      INTEGER :: tArray(8), check
       REAL(KIND=8) :: roInf
       CHARACTER(LEN=8) :: date
       CHARACTER(LEN=stdL) :: ctmp
@@ -77,6 +77,7 @@
          pClr         = .TRUE.
          mvMsh        = .FALSE.
          stFileFlag   = .FALSE.
+         velFileFlag  = .FALSE.
          stFileRepl   = .FALSE.
          saveAve      = .FALSE.
          sepOutput    = .FALSE.
@@ -87,6 +88,7 @@
          roInf        = 2D-1
          stFileName   = "stFile"
          iniFilePath  = ""
+         velFilePath  = ""
          stopTrigName = "STOP_SIM"
          rmsh%isReqd  = .FALSE.
          ichckIEN     = .TRUE.
@@ -129,9 +131,12 @@
          lPtr => list%get(pClr,"Colorful terminal output")
          lPtr => list%get(sepOutput,"Use separator in the history file")
          lPtr => list%get(stFileFlag,"Continue previous simulation",1)
-
          IF (.NOT.stFileFlag) REWIND(std%fId)
-
+         check = list%srch("Use pre-computed velocity")
+         IF (check .EQ. 1) THEN 
+            lPtr => list%get(velFileFlag,"Use pre-computed velocity",1)
+            IF (.NOT.velFileFlag) REWIND(std%fId)
+         END IF
          CALL DATE_AND_TIME(DATE=date, VALUES=tArray)
          std = "                                               "
          std = " ----------------------------------------------"
@@ -162,6 +167,17 @@
             lPtr => list%get(fTmp,"Simulation initialization file path")
             IF (ASSOCIATED(lPtr))
      2         iniFilePath = fTmp%fname
+         END IF
+
+         IF (velFileFlag) THEN
+            lPtr => list%get(fTmp,"Velocity results file path",1)
+            IF (ASSOCIATED(lPtr))
+     2         velFilePath = fTmp%fname
+            lPtr => list%get(fStep,"First time step",1)
+            lPtr => list%get(lStep,"Last time step",1)
+            lPtr => list%get(iStep,"Increment time step",1)
+            ntpoints = (lStep - fStep)/iStep + 1
+            
          END IF
 
          lPtr => list%get(nsd,"Number of spatial dimensions",
@@ -220,6 +236,8 @@
 !     Reading the mesh
       CALL READMSH(list)
 
+      IF (VelFileFlag) CALL READVELOCITYVTU(VelFilePath)
+
 !--------------------------------------------------------------------
 !     Reading equations
       nEq = list%srch("Add equation",ll=1)
@@ -246,15 +264,34 @@
          lPtr => list%get(ctmp,"Add equation",1)
          IF ((eq(iEq)%phys .EQ. phys_BBO) .OR.
      2       (eq(iEq)%phys .EQ. phys_heatF)) THEN
-            IF (ctmp.NE."fluid" .AND. ctmp.NE."FSI") THEN
-               err = "BBO/heatF equation has to be specified after"//
-     2            " fluid/FSI equation"
+            IF (velFileFlag) THEN
+                print *, "Reading pre-computed velocity field"
+            ELSE
+               IF (ctmp.NE."fluid" .AND. ctmp.NE."FSI") THEN
+                  err = "BBO/heatF equation has to be specified after"//
+     2               " fluid/FSI equation"
+               END IF
             END IF
          END IF
          IF (eq(iEq)%phys .EQ. phys_mesh) THEN
             IF (.NOT.mvMsh) err = "mesh equation can only"//
      2         " be specified after FSI equation"
          END IF
+         IF (eq(iEq)%phys .EQ. phys_RT) THEN
+            ALLOCATE(tagRT(gtnNo))
+            OPEN (1, FILE='tagFile')
+            READ(1,*) i
+            IF (i .NE. gtnNo) THEN
+               err ="tagFile number of nodes does not"//
+     2            " match with the mesh"
+            END IF
+            DO i=1, gtnNo
+               READ(1,*) tagRT(i)
+            END DO 
+            CLOSE(1)
+
+         END IF
+
       END DO
       IF (.NOT.ALLOCATED(cplBC%xo)) THEN
          cplBC%nX = 0
@@ -374,11 +411,25 @@
 
          propL(1,1) = conductivity
          propL(2,1) = source_term
+         propL(3,1) = initial_condition
          CALL READDOMAIN(lEq, propL, list)
 
          nDOP = (/2,1,2,0/)
          outPuts(1) = out_temperature
          outPuts(2) = out_heatFlux
+
+         CALL READLS(lSolver_GMRES, lEq, list)
+!     HEAT FLUID advection diffusion solver -------------------------
+      CASE ('RT')
+         lEq%phys = phys_RT
+         propL(1,1) = conductivity
+         propL(2,1) = source_term
+         CALL READDOMAIN(lEq, propL, list)
+
+         nDOP = (/2,1,2,0/)
+         outPuts(1) = out_temperature
+         outPuts(2) = out_heatFlux
+   
 
          CALL READLS(lSolver_GMRES, lEq, list)
 !     HEAT SOLID Laplac equation solver------------------------------
@@ -658,6 +709,8 @@
                lPtr => lPD%get(rtmp,"Source term")
             CASE (damping)
                lPtr => lPD%get(rtmp,"Damping")
+            CASE (initial_condition)
+               lPtr => lPD%get(rtmp,"Initial Condition")
             CASE DEFAULT
                err = "Undefined properties"
             END SELECT

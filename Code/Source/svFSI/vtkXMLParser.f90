@@ -251,7 +251,6 @@
          type(vtkXMLType), intent(inout) :: vtk
          character(len=*), intent(in) :: fName
          integer(IK) :: istat
-
          istat = 0
          inquire(file=trim(fName), exist=flag)
          if ( .not.flag ) then
@@ -270,8 +269,8 @@
             istat=-1; return
          end select
 
-!         write(stdout,ftab1) "<VTK XML Parser> Loading file <-----"// &
-!            "  "//trim(fName)
+         write(stdout,ftab1) "<VTK XML Parser> Loading file <-----"// &
+            "  "//trim(fName)
          call initVTKXMLlib
 
          call initVTKXMLstruct(vtk,fName)

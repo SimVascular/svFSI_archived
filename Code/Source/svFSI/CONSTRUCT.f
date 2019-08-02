@@ -36,7 +36,7 @@
 !
 !--------------------------------------------------------------------
 
-      SUBROUTINE CONSTRUCT(lM, al, yl, dl, dol, xl, fNl, ptr, e)
+      SUBROUTINE CONSTRUCT(lM, al, yl, dl, dol, xl, fNl, tl, ptr, e)
 
       USE COMMOD
       USE ALLFUN
@@ -46,7 +46,8 @@
       TYPE(mshType), INTENT(INOUT) :: lM
       INTEGER, INTENT(IN) :: ptr(lM%eNoN), e
       REAL(KIND=8), INTENT(IN) :: al(tDof,lM%eNoN), yl(tDof,lM%eNoN),
-     2   dl(tDof,lM%eNoN), dol(nsd,lM%eNoN), fNl(nsd,lM%eNoN)
+     2   dl(tDof,lM%eNoN), dol(nsd,lM%eNoN), fNl(nsd,lM%eNoN), 
+     3   tl(lM%eNoN)
       REAL(KIND=8), INTENT(INOUT) :: xl(nsd,lM%eNoN)
 
       INTEGER g, cPhys, eNoN
@@ -103,7 +104,14 @@
 
          CASE (phys_heatF)
             IF (nsd .EQ. 3) THEN
-               CALL HEATF3D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+               CALL HEATF3D(eNoN, w, N, Nx, al, yl,tl, ksix, lR, lK)
+            ELSE
+               CALL HEATF2D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
+            END IF
+
+         CASE (phys_RT)
+            IF (nsd .EQ. 3) THEN
+               CALL HEATF3D(eNoN, w, N, Nx, al, yl, tl, ksix, lR, lK)
             ELSE
                CALL HEATF2D(eNoN, w, N, Nx, al, yl, ksix, lR, lK)
             END IF

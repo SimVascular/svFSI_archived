@@ -108,7 +108,6 @@ c      END DO
       CHARACTER(LEN=stdL) sOut
 
       IF (cm%slv()) RETURN
-
       fid = 1
       tmp = CPUT()
 

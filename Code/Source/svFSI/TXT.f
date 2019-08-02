@@ -50,7 +50,8 @@
 
       LOGICAL ltmp, wtn(2)
       REAL(KIND=8), ALLOCATABLE :: tmpV(:,:)
-      
+!      REAL(KIND=8) tmpS
+
       fid = 1
       ALLOCATE (tmpV(maxnsd,tnNo))
 
@@ -84,7 +85,7 @@
             l = eq(iEq)%output(iOut)%l
             s = eq(iEq)%s + eq(iEq)%output(iOut)%o
             e = s + l - 1
-            
+
             oGrp = eq(iEq)%output(iOut)%grp
             SELECT CASE (oGrp)
             CASE (outGrp_NA)
@@ -128,6 +129,9 @@
                CALL WTXT(eq(iEq), l, fName, tmpV, wtn)
             END IF
          END DO
+         IF (eq(iEq)%phys .EQ. phys_RT) THEN
+            CALL RTTXT(Yo(eq(iEq)%s,:))
+         END IF
       END DO
 
       RETURN
@@ -151,8 +155,29 @@
       LOGICAL flag
       INTEGER iM, iFa, fid, iDmn, i
       CHARACTER(LEN=stdL) stmp
-      
+      REAL(KIND=8), ALLOCATABLE :: s(:,:)
+      REAL(KIND=8) v
+
+
       fid = 1
+
+      
+      IF (lEq%phys .EQ. phys_RT) THEN
+         ALLOCATE(s(1,tnNo))
+         s = 1D0
+         v = Integ(0, s, 1, 1)
+
+         IF (cm%mas()) THEN
+            OPEN(fid,FILE="Volume.dat")
+            WRITE(fid,*) v
+            CLOSE(fid)
+            OPEN(fid, FILE="int_r.dat")
+            CLOSE(fid)
+         END IF
+      END IF
+
+      fid =1
+
       IF (cm%slv()) RETURN
 
 !     i=1 are the boundary values and i=2 are volume values
@@ -201,6 +226,7 @@
          WRITE(fid,*) 
          CLOSE(fid)
       END DO
+
 
       RETURN
       END SUBROUTINE CCTXT
@@ -260,8 +286,33 @@
          END IF
       END DO
 
+
       RETURN
       END SUBROUTINE WTXT
+
+!--------------------------------------------------------------------
+!     Write integral of RT 
+      SUBROUTINE RTTXT(tmpV)
+
+      USE COMMOD
+      USE ALLFUN
+
+      IMPLICIT NONE
+   
+      REAL(KIND=8), INTENT(IN) :: tmpV(1,tnNo)
+      INTEGER fid
+      REAL(KIND=8) tmp
+      fid = 1
+      tmp = Integ(0,tmpV,1,1)
+
+      IF (cm%mas()) THEN
+         OPEN(fid, FILE='int_r.dat', STATUS='OLD',
+     2      POSITION='APPEND')
+         WRITE(fid,*) tmp
+         CLOSE(fid)
+      END IF
+
+      END SUBROUTINE RTTXT
 
 !--------------------------------------------------------------------
 !     Only keeping first "n" lines of fileName      

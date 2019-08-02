@@ -76,13 +76,14 @@
 !     Density of fluid, viscosity of fluid, density of solid, elsticity
 !     modulus, Poisson's ratio, conductivity, internal force(X,Y,Z),
 !     particles diameter, particle density, stabilization coefficient
-!     for backflow divergence
+!     for backflow divergence, source term, damping, region of interest
+!     for RT calculation
       INTEGER, PARAMETER :: prop_NA = 0, fluid_density = 1,
      2   viscosity = 2, solid_density = 3, elasticity_modulus = 4,
      3   poisson_ratio = 5, conductivity = 6, f_x = 7, f_y = 8, f_z = 9,
      4   particle_diameter = 10, particle_density = 11,
      5   permeability = 12, backflow_stab = 13, source_term = 14,
-     6   damping = 15
+     6   damping = 15, initial_condition = 16
 
 !     Types of accepted elements
 !     Linear (1D), triangle (2D), tetrahedral (3D), bilinear (2D), quad
@@ -100,7 +101,7 @@
       INTEGER, PARAMETER :: phys_NA = 200, phys_fluid = 201,
      2   phys_struct = 202, phys_heatS = 203, phys_lElas = 204,
      3   phys_heatF = 205, phys_FSI = 206, phys_elcMag = 207,
-     4   phys_mesh = 208, phys_BBO = 209
+     4   phys_mesh = 208, phys_BBO = 209, phys_RT = 210
 
 !     Saving formats
 !     Don't save, VTK ASCII format, VTK binary format
@@ -577,6 +578,8 @@
       LOGICAL sepOutput
 !     Whether start from beginning or from simulations
       LOGICAL stFileFlag
+!     Whether to use pre-computed vel field for RT simulations
+      LOGICAL velFileFlag
 !     Whether to overwrite restart file or not
       LOGICAL stFileRepl
 !     Use Legacy mesh input format
@@ -633,6 +636,14 @@
       INTEGER tnNo
 !     Restart Time Step
       INTEGER rsTS
+!     First Time Step
+      INTEGER fStep
+!     Last Time Step
+      INTEGER lStep
+!     Increment Time Step
+      INTEGER iStep
+!     Increment Time Step
+      INTEGER ntpoints
 
 !     REAL VARIABLES
 !     Time step size
@@ -643,12 +654,15 @@
 !     CHARACTER VARIABLES
 !     Initialization file path
       CHARACTER(LEN=stdL) iniFilePath
+!     Velocity file path
+      CHARACTER(LEN=stdL) velFilePath
 !     Saved output file name
       CHARACTER(LEN=stdL) saveName
 !     Restart file name
       CHARACTER(LEN=stdL) stFileName
 !     Stop_trigger file name
       CHARACTER(LEN=stdL) stopTrigName
+      
 
 !     ALLOCATABLE DATA
 !     Column pointer (for sparse LHS matrix structure)
@@ -659,6 +673,8 @@
       INTEGER, ALLOCATABLE :: ltg(:)
 !     Row pointer (for sparse LHS matrix structure)
       INTEGER, ALLOCATABLE :: rowPtr(:)
+!     Region of interest nodes (RT calculation)
+      INTEGER, ALLOCATABLE :: tagRT(:)
 
 !     Old time derivative of variables (acceleration)
       REAL(KIND=8), ALLOCATABLE :: Ao(:,:)
@@ -680,6 +696,10 @@
       REAL(KIND=8), ALLOCATABLE :: Yn(:,:)
 !     Fiber direction (for electrophysiology / structure mechanics)
       REAL(KIND=8), ALLOCATABLE :: fN(:,:)
+!     Velocity field (for RT)
+      REAL(KIND=8), ALLOCATABLE :: allU(:,:,:)
+!     Velocity field (for RT)
+      REAL(KIND=8), ALLOCATABLE :: Un(:,:,:)
 
 !     DERIVED TYPE VARIABLES
 !     Coupled BCs structures used for multidomain simulations
