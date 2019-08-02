@@ -46,7 +46,7 @@
       TYPE(mshType), INTENT(INOUT) :: lM
       INTEGER, INTENT(IN) :: ptr(lM%eNoN), e
       REAL(KIND=8), INTENT(IN) :: al(tDof,lM%eNoN), yl(tDof,lM%eNoN),
-     2   dl(tDof,lM%eNoN), dol(nsd,lM%eNoN), fNl(nsd,lM%eNoN), 
+     2   dl(tDof,lM%eNoN), dol(nsd,lM%eNoN), fNl(nsd,lM%eNoN),
      3   tl(lM%eNoN)
       REAL(KIND=8), INTENT(INOUT) :: xl(nsd,lM%eNoN)
 
@@ -232,11 +232,10 @@
       IF (useTrilinosAssemAndLS) THEN
          CALL TRILINOS_DOASSEM(eNoN, ptr, lK, lR)
       ELSE
-#else
+#endif
 !$OMP CRITICAL
          CALL DOASSEM(eNoN, ptr, lK, lR)
 !$OMP END CRITICAL
-#endif
 #ifdef WITH_TRILINOS
       END IF
 #endif

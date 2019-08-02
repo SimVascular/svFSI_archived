@@ -754,7 +754,7 @@
          d%gx  = tmpX
          d%IEN = IEN
       ELSE
-         IF (ALLOCATED(dmnId)) CALL MPI_GATHERV(tDmnId, sCe(cm%tF()), 
+         IF (ALLOCATED(tdmnId)) CALL MPI_GATHERV(tDmnId, sCe(cm%tF()), 
      2      mpint, d%xe(:,2), sCe, dise, mpint, master, cm%com(), ierr)
 
 !     First collecting all the elements connectivity
