@@ -55,18 +55,18 @@
       TYPE(listType), POINTER :: lPtr, lPM, lPBC
       TYPE(stackType) avNds
       TYPE(fileType) fTmp
-      
+
       REAL(KIND=8), ALLOCATABLE :: tmpX(:,:), gX(:,:), tmpA(:,:),
      2   tmpY(:,:), tmpD(:,:)
 
+      minX  =  HUGE(minX)
+      maxX  = -HUGE(minX)
       IF (.NOT.resetSim) THEN
          nMsh  = list%srch("Add mesh",ll=1)
          std = " Number of meshes: "//nMsh
          ALLOCATE (msh(nMsh), gX(0,0))
 
          gtnNo = 0
-         minX  =  HUGE(minX)
-         maxX  = -HUGE(minX)
          DO iM=1, nMsh
             lPM => list%get(msh(iM)%name,"Add mesh",iM)
             std = " Reading mesh <"//CLR(TRIM(msh(iM)%name))//">"
@@ -260,7 +260,11 @@
          lPM => list%get(msh(iM)%name,"Add mesh",iM)
 
          lPtr => lPM%get(fTmp,"Domain file path")
-         IF (ASSOCIATED(lPtr)) CALL SETDMNIDFF(msh(iM), fTmp%open())
+         IF (ASSOCIATED(lPtr)) THEN
+            IF (rmsh%isReqd) err = "Variable domain properties is not"//
+     2         " allowed with remeshing"
+            CALL SETDMNIDFF(msh(iM), fTmp%open())
+         END IF
 
          lPtr => lPM%get(i,"Domain",ll=0,ul=BIT_SIZE(dmnId)-1)
          IF (ASSOCIATED(lPtr)) CALL SETDMNID(msh(iM),i)
@@ -280,17 +284,20 @@
             END DO
          END DO
       END IF
-      
+
 !     Read fiber orientation
+      flag = .FALSE.
       DO iM=1, nMsh
          lPM => list%get(msh(iM)%name,"Add mesh",iM)
-         
+
          lPtr => lPM%get(cTmp, "Fiber direction file path")
          IF (ASSOCIATED(lPtr)) THEN
+            IF (rmsh%isReqd) err = "Fiber directions read from "//
+     2         "file is not allowed with remeshing"
             ALLOCATE(msh(iM)%x(nsd,msh(iM)%gnNo))
             CALL SETFIBDIRFF(msh(iM), cTmp)
          END IF
-         
+
          lPtr => lPM%get(fibN, "Fiber direction")
          IF (ASSOCIATED(lPtr)) THEN
             ALLOCATE(msh(iM)%x(nsd,msh(iM)%gnNo))
@@ -632,41 +639,41 @@
 !####################################################################
 !     Read domain from a vtu file
       SUBROUTINE SETFIBDIRFF(lM, fName)
-      
+
       USE COMMOD
       USE LISTMOD
       USE ALLFUN
       USE vtkXMLMod
-      
+
       IMPLICIT NONE
-      
+
       TYPE(mshType), INTENT(INOUT) :: lM
       CHARACTER(LEN=stdL) :: fName
-      
+
       TYPE(vtkXMLType) :: vtu
       INTEGER :: iStat, iTmp
       REAL(KIND=8), ALLOCATABLE :: tmpX(:,:)
-      
+
       iStat = 0
       std = " <VTK XML Parser> Loading file <"//TRIM(fName)//">"
       CALL loadVTK(vtu, fName, iStat)
       IF (iStat .LT. 0) err = "VTU file read error (init)"
-      
+
       CALL getVTK_numPoints(vtu, iTmp, iStat)
       IF (iTmp .NE. lM%gnNo) err = "Mismatch in num points for fiber "//
      2   "direction"
       ALLOCATE(tmpX(maxNSD,lM%gnNo))
-      
+
       CALL getVTK_pointData(vtu, "FIB_DIR", tmpX, iStat)
       IF (iStat .LT. 0) err = "VTU file read error (fiber direction)"
       lM%x(:,:) = tmpX(1:nsd,:)
       DEALLOCATE(tmpX)
-      
+
       CALL flushVTK(vtu)
-      
+
       RETURN
       END SUBROUTINE SETFIBDIRFF
-      
+
 !####################################################################
 !     Check the mesh. If this is flag=nonL=.true., then we only check first 4 nodes
 !     of IEN array
